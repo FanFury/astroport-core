@@ -184,7 +184,7 @@ fn configure_proxy(
                 custom_token_address: Addr::unchecked(""),
                 liquidity_token: Addr::unchecked(""),
                 authorized_liquidity_provider: Addr::unchecked(""),
-                swap_opening_date: env.block.time,
+                swap_opening_date: Timestamp::from_nanos(swap_opening_date.u64())
             };
             if let Some(pool_pair_address) = pool_pair_address {
                 config.pool_pair_address = addr_validate_to_lower(deps.api, &pool_pair_address)?;
@@ -224,10 +224,8 @@ fn process_received_message(
         }) => forward_swap_to_astro(deps, info, received_message),
         Ok(ProxyCw20HookMsg::WithdrawLiquidity {}) => withdraw_liquidity(
             deps,
-            env,
             info,
-            Addr::unchecked(received_message.sender),
-            received_message.amount,
+            received_message
         ),
         // Ok(ProxyCw20HookMsg::ProvideLiquidity {
         //     assets,
@@ -386,6 +384,9 @@ pub fn forward_swap_to_astro(
     received_message: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
     let config: Config = CONFIG.load(deps.storage)?;
+    if info.sender != config.custom_token_address {
+        return Err(ContractError::Unauthorized {});
+    }
     let send_msg = Cw20ExecuteMsg::Send {
         contract: config.pool_pair_address.to_string(),
         amount: received_message.amount,
@@ -481,33 +482,38 @@ pub fn provide_liquidity(
 
 pub fn withdraw_liquidity(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
-    sender: Addr,
-    amount: Uint128,
+    received_message: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
-    let mut config: Config = CONFIG.load(deps.storage).unwrap();
+    let config: Config = CONFIG.load(deps.storage)?;
 
-    // if info.sender != config.pair_info.liquidity_token {
-    //     return Err(ContractError::Unauthorized {});
-    // }
-    // let pl_msg = PairExecuteMsg::ProvideLiquidity {
-    //     assets,
-    //     slippage_tolerance,
-    //     auto_stake,
-    //     receiver,
-    // };
-    // let exec = WasmMsg::Execute {
-    //     contract_addr: config.pool_pair_address.to_string(),
-    //     msg: to_binary(&pl_msg).unwrap(),
-    //     funds: funds_to_pass,
-    // };
-    // let mut send: SubMsg = SubMsg::new(exec);
+    if info.sender != config.liquidity_token {
+        return Err(ContractError::Unauthorized {});
+    }
+    let wl_msg = Cw20ExecuteMsg::Send {
+        contract: config.pool_pair_address.to_string(),
+        amount: received_message.amount,
+        msg: received_message.msg,
+    };
+    let exec = WasmMsg::Execute {
+        contract_addr: config.liquidity_token.to_string(),
+        msg: to_binary(&wl_msg).unwrap(),
+        funds: info.funds,
+    };
 
-    Err(ContractError::Std(StdError::generic_err(format!(
-        "Nitin was here in sender = {:?} amount = {:?}",
-        sender, amount
-    ))))
+    let mut send: SubMsg = SubMsg::new(exec);
+    let mut resp = Response::new();
+    let data_msg = format!("Withdraw {:?}", wl_msg).into_bytes();
+    Ok(resp
+        .add_submessage(send)
+        .add_attribute("action", "Forwarding withdraw message to lptoken address")
+        .set_data(data_msg)
+        )
+
+    // Err(ContractError::Std(StdError::generic_err(format!(
+    //     "Nitin was here in sender = {:?} amount = {:?}",
+    //     sender, amount
+    // ))))
 }
 
 #[allow(clippy::too_many_arguments)]
