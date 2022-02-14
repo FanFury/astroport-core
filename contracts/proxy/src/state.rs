@@ -30,8 +30,11 @@ pub struct Config {
     /// authorised_liquidity_provider will be stored to this address
     pub default_lp_tokens_holder: Addr,
     ///Time in nano seconds since EPOC when the swapping will be enabled
+
+    pub admin_address: Addr,
+    pub pool_pair_address: Addr,
+    pub liquidity_token: Addr,
     pub swap_opening_date: Timestamp,
-    pub pool_pair_address: String,
 }
 // put the length bytes at the first for compatibility with legacy singleton store
 pub const CONFIG: Item<Config> = Item::new("\u{0}\u{6}config");

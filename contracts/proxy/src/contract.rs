@@ -6,9 +6,9 @@ use crate::state::{
     BondedRewardsDetails,
     BONDED_REWARDS_DETAILS,
 };
-use astroport::asset::{addr_validate_to_lower, Asset, AssetInfo};
+use astroport::asset::{addr_validate_to_lower, Asset, AssetInfo, PairInfo};
 use astroport::pair::ExecuteMsg as PairExecuteMsg;
-use astroport::pair::QueryMsg::{CumulativePrices, Pool, ReverseSimulation, Simulation};
+use astroport::pair::QueryMsg::{CumulativePrices, Pair, Pool, ReverseSimulation, Simulation};
 use astroport::pair::{
     CumulativePricesResponse, Cw20HookMsg, PoolResponse, ReverseSimulationResponse,
     SimulationResponse,
@@ -90,9 +90,22 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Configure {
+            admin_address,
             pool_pair_address,
+            custom_token_address,
+            liquidity_token,
+            authorized_liquidity_provider,
             swap_opening_date,
-        } => configure_proxy(deps, env, info, pool_pair_address, swap_opening_date),
+        } => configure_proxy(
+            deps, 
+            env, 
+            info, 
+            admin_address, 
+            pool_pair_address, 
+            custom_token_address, 
+            liquidity_token, 
+            authorized_liquidity_provider, 
+            swap_opening_date),
         ExecuteMsg::Receive(received_message) => {
             process_received_message(deps, env, info, received_message)
         }
@@ -208,7 +221,11 @@ fn configure_proxy(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    admin_address: String,
     pool_pair_address: Option<String>,
+    custom_token_address: Option<String>,
+    liquidity_token: Option<String>,
+    authorized_liquidity_provider: Option<String>,
     swap_opening_date: Uint64,
 ) -> Result<Response, ContractError> {
     // let sender_addr = info.sender.clone();
@@ -221,11 +238,45 @@ fn configure_proxy(
     //     ))));
     // }
 
-    let mut config = CONFIG.load(deps.storage)?;
-    if let Some(pool_pair_addr) = pool_pair_address {
-        config.pool_pair_address = pool_pair_addr;
+    let mut config;
+    let config_load = CONFIG.load(deps.storage);
+
+    match config_load {
+        Ok(cfg) => {
+            config = cfg;
+            config.admin_address = addr_validate_to_lower(deps.api, &admin_address)?;
+            if let Some(pool_pair_address) = pool_pair_address {
+                config.pool_pair_address = addr_validate_to_lower(deps.api, &pool_pair_address)?;
+            }
+            if let Some(custom_token_address) = custom_token_address {
+                config.custom_token_address = addr_validate_to_lower(deps.api, &custom_token_address)?;
+            }
+            if let Some(liquidity_token) = liquidity_token {
+                config.liquidity_token = addr_validate_to_lower(deps.api, &liquidity_token)?;
+            }
+            if let Some(authorized_liquidity_provider) = authorized_liquidity_provider {
+                config.authorized_liquidity_provider = addr_validate_to_lower(deps.api, &authorized_liquidity_provider)?;
+            }
+            config.swap_opening_date = Timestamp::from_nanos(swap_opening_date.u64());
+        }
+        Err(e) => {
+            config = Config {
+                admin_address: addr_validate_to_lower(deps.api, &admin_address)?,
+                pool_pair_address: Addr::unchecked(""),
+                custom_token_address: Addr::unchecked(""),
+                liquidity_token: Addr::unchecked(""),
+                authorized_liquidity_provider: Addr::unchecked(""),
+                swap_opening_date: env.block.time,
+            };
+            if let Some(pool_pair_address) = pool_pair_address {
+                config.pool_pair_address = addr_validate_to_lower(deps.api, &pool_pair_address)?;
+            }
+            if let Some(authorized_liquidity_provider) = authorized_liquidity_provider {
+                config.authorized_liquidity_provider = addr_validate_to_lower(deps.api, &authorized_liquidity_provider)?;
+            }
+        }
     }
-    config.swap_opening_date = Timestamp::from_nanos(swap_opening_date.u64());
+
     CONFIG.save(deps.storage, &config)?;
     Ok(Response::default())
 }
@@ -304,7 +355,7 @@ pub fn incr_allow_for_provide_liquidity(
 
     // Prepare submessage for Increase Allowance
     let increase_allowance_msg = Cw20ExecuteMsg::IncreaseAllowance {
-        spender: config.pool_pair_address,
+        spender: config.pool_pair_address.to_string(),
         amount: amount,
         expires: None,
     };
@@ -424,12 +475,12 @@ pub fn forward_swap_to_astro(
 ) -> Result<Response, ContractError> {
     let config: Config = CONFIG.load(deps.storage)?;
     let send_msg = Cw20ExecuteMsg::Send {
-        contract: config.pool_pair_address,
+        contract: config.pool_pair_address.to_string(),
         amount: received_message.amount,
         msg: received_message.msg,
     };
     let exec = WasmMsg::Execute {
-        contract_addr: config.custom_token_address,
+        contract_addr: config.custom_token_address.to_string(),
         msg: to_binary(&send_msg).unwrap(),
         funds: info.funds,
     };
@@ -692,6 +743,24 @@ pub fn withdraw_liquidity(
     sender: Addr,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
+    let mut config: Config = CONFIG.load(deps.storage).unwrap();
+
+    // if info.sender != config.pair_info.liquidity_token {
+    //     return Err(ContractError::Unauthorized {});
+    // }
+    // let pl_msg = PairExecuteMsg::ProvideLiquidity {
+    //     assets,
+    //     slippage_tolerance,
+    //     auto_stake,
+    //     receiver,
+    // };
+    // let exec = WasmMsg::Execute {
+    //     contract_addr: config.pool_pair_address.to_string(),
+    //     msg: to_binary(&pl_msg).unwrap(),
+    //     funds: funds_to_pass,
+    // };
+    // let mut send: SubMsg = SubMsg::new(exec);
+
     Err(ContractError::Std(StdError::generic_err(format!(
         "Nitin was here in sender = {:?} amount = {:?}",
         sender, amount
@@ -873,6 +942,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Configuration {} => to_binary(&query_configuration(deps)?),
+        QueryMsg::Pair {} => to_binary(&query_pair(deps)?),
         QueryMsg::Pool {} => to_binary(&query_pool(deps)?),
         QueryMsg::Simulation { offer_asset } => to_binary(&query_simulation(deps, offer_asset)?),
         QueryMsg::ReverseSimulation { ask_asset } => {
@@ -892,6 +962,12 @@ fn query_pool(deps: Deps) -> StdResult<PoolResponse> {
     let config: Config = CONFIG.load(deps.storage)?;
     deps.querier
         .query_wasm_smart(config.pool_pair_address, &Pool {})
+}
+
+fn query_pair(deps: Deps) -> StdResult<PairInfo> {
+    let config: Config = CONFIG.load(deps.storage)?;
+    deps.querier
+        .query_wasm_smart(config.pool_pair_address, &Pair {})
 }
 
 fn query_simulation(deps: Deps, offer_asset: Asset) -> StdResult<SimulationResponse> {
