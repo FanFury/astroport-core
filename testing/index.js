@@ -232,12 +232,11 @@ const instantiateProxyContract = async (deploymentDetails) => {
     if (!deploymentDetails.proxyContractAddress) {
         console.log("Instantiating proxy contract");
         let proxyInitMessage = {
-            /// Pool pair contract address of astroport
-            pool_pair_address: deploymentDetails.poolPairContractAddress,
+            admin_address: deploymentDetails.adminWallet,
             /// contract address of Fury token
             custom_token_address: deploymentDetails.furyContractAddress,
             authorized_liquidity_provider: deploymentDetails.adminWallet,
-            swap_opening_date: "1644734115627110528",
+            swap_opening_date: "1644734115627110527",
         }
         console.log(JSON.stringify(proxyInitMessage, null, 2));
         let result = await instantiateContract(mint_wallet, deploymentDetails.proxyCodeId, proxyInitMessage);
@@ -281,6 +280,18 @@ const createPoolPairs = async (deploymentDetails) => {
 
         console.log(`Pair successfully created! Address: ${deploymentDetails.poolPairContractAddress}`)
         writeArtifact(deploymentDetails, terraClient.chainID)
+        let executeMsg = {
+            configure_proxy: {
+                admin_address: deploymentDetails.adminWallet,
+                pool_pair_address: deploymentDetails.poolPairContractAddress,
+                custom_token_address: deploymentDetails.furyContractAddress,
+                liquidity_token: deploymentDetails.poolLpTokenAddress,
+                authorized_liquidity_provider: deploymentDetails.adminWallet,
+                swap_opening_date: "1644734115627110528",
+            }
+        };
+        console.log(`Proxy config - executeMsg = ${executeMsg}`);
+        let response = await executeContract(mint_wallet, deploymentDetails.proxyContractAddress, executeMsg);
     }
 }
 

@@ -1,12 +1,15 @@
-use cosmwasm_std::{Binary, Coin, Timestamp};
+use cosmwasm_std::{Binary, Coin, Timestamp, Addr};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
-    pub pool_pair_address: String,
-    pub custom_token_address: String,
+    pub admin_address: Addr,
+    pub pool_pair_address: Addr,
+    pub custom_token_address: Addr,
+    pub liquidity_token: Addr,
+    pub authorized_liquidity_provider: Addr,
     pub swap_opening_date: Timestamp,
 }
 // put the length bytes at the first for compatibility with legacy singleton store

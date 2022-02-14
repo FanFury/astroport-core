@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
 pub struct InstantiateMsg {
+    pub admin_address: String,
     /// contract address of Fury token
     pub custom_token_address: String,
     pub authorized_liquidity_provider: String,
@@ -17,10 +18,16 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Configure {
+        /// Administreator address of astroport
+        admin_address: String,
         /// Pool pair contract address of astroport
         pool_pair_address: Option<String>,
         /// contract address of Fury token
         custom_token_address: Option<String>,
+        /// contract address of Liquidity token
+        liquidity_token: Option<String>,
+        /// Authorized for direct provide_liquidity into the Pool
+        authorized_liquidity_provider: Option<String>,
         ///Time in nano seconds since EPOC when the swapping will be enabled
         swap_opening_date: Uint64,
     },
@@ -55,6 +62,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Configuration {},
     Pool {},
+    Pair {},
     /// Returns information about the simulation of the swap in a [`SimulationResponse`] object.
     Simulation {
         offer_asset: Asset,
