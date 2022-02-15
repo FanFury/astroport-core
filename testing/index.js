@@ -335,12 +335,12 @@ const createPoolPairs = async (deploymentDetails) => {
             pair: {}
         })
 
-        deploymentDetails.poolLpTokenAddress = pool_info.liquidity_token
+        deploymentDetails.poolLpTokenAddress = pool_info.liquidity_token;
 
-        console.log(`Pair successfully created! Address: ${deploymentDetails.poolPairContractAddress}`)
-        writeArtifact(deploymentDetails, terraClient.chainID)
-        let executeMsg = {
-            configure_proxy: {
+        console.log(`Pair successfully created! Address: ${deploymentDetails.poolPairContractAddress}`);
+        writeArtifact(deploymentDetails, terraClient.chainID);
+        executeMsg = {
+            configure: {
                 admin_address: deploymentDetails.adminWallet,
                 pool_pair_address: deploymentDetails.poolPairContractAddress,
                 custom_token_address: deploymentDetails.furyContractAddress,
@@ -350,7 +350,7 @@ const createPoolPairs = async (deploymentDetails) => {
             }
         };
         console.log(`Proxy config - executeMsg = ${executeMsg}`);
-        let response = await executeContract(mint_wallet, deploymentDetails.proxyContractAddress, executeMsg);
+        response = await executeContract(mint_wallet, deploymentDetails.proxyContractAddress, executeMsg);
     }
 }
 
@@ -649,6 +649,22 @@ const reverseSimulationAskFury = async (deploymentDetails) => {
         }
     });
     console.log(JSON.stringify(simulationResult));
+}
+
+const withdrawLiquidity = async (deploymentDetails) => {
+    let withdrawMsg = {
+        withdraw_liquidity : {}
+    };
+    let base64Msg = Buffer.from(JSON.stringify(withdrawMsg)).toString('base64');
+    let executeMsg = {
+        send: {
+            contract_addr: deploymentDetails.poolPairContractAddress,
+            amount: "1000000",
+            msg: withdrawMsg,
+        }
+    };
+    let response = await executeContract(mint_wallet, deploymentDetails.poolLpTokenAddress, executeMsg);
+    console.log(`Save Response - ${response['txhash']}`);
 }
 
 main()
