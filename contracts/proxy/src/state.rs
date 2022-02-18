@@ -1,16 +1,42 @@
-use cosmwasm_std::{Binary, Coin, Timestamp, Addr};
+use cosmwasm_std::{Addr, Binary, Coin, Timestamp, Uint128};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
+    /// administrator address
     pub admin_address: Addr,
-    pub pool_pair_address: Addr,
+    /// contract address of Fury token
     pub custom_token_address: Addr,
-    pub liquidity_token: Addr,
+
+    /// discount_rate when fury and UST are both provided
+    pub pair_discount_rate: u16,
+    /// bonding period when fury and UST are both provided
+    pub pair_bonding_period_in_days: u16,
+    /// This address has the fury reward funds when fury and UST are both provided
+    pub pair_fury_provider: Addr,
+
+    /// discount_rate when only UST provided
+    pub native_discount_rate: u16,
+    /// bonding period when only UST provided
+    pub native_bonding_period_in_days: u16,
+    /// This address has the fury reward funds when only UST provided
+    pub native_fury_provider: Addr,
+
+    /// This address has the authority to pump in liquidity
+    /// The LP tokens for this address will be returned to this address
     pub authorized_liquidity_provider: Addr,
+
+    /// The LP tokens for all liquidity providers except
+    /// authorised_liquidity_provider will be stored to this address
+    pub default_lp_tokens_holder: Addr,
+    ///Time in nano seconds since EPOC when the swapping will be enabled
     pub swap_opening_date: Timestamp,
+    /// Liquidity Pool contract address
+    pub pool_pair_address: Addr,
+    /// LP token contract address
+    pub liquidity_token: Addr,
 }
 // put the length bytes at the first for compatibility with legacy singleton store
 pub const CONFIG: Item<Config> = Item::new("\u{0}\u{6}config");
@@ -46,6 +72,7 @@ pub enum SubMessageNextAction {
     TransferCustomAssets,
     IncreaseAllowance,
     ProvideLiquidity,
+    TransferCustomAssetsFromFundsOwner,
 }
 
 /// This is used for saving pending request details
@@ -63,9 +90,34 @@ pub struct SubMessageDetails {
     pub sub_message_payload: Binary,
 
     pub funds: Vec<Coin>,
+
+	pub user_address: String,
+
+	pub is_fury_provided: bool,
 }
 /// Map of request and list of their bonds. the key is request id and the
 /// Value jsonified request
 pub const SUB_MESSAGE_DETAILS: Map<String, SubMessageDetails> = Map::new("pending_request_details");
+
+
+/// This is used for saving various bond details
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
+#[serde(rename_all = "snake_case")]
+pub struct BondedRewardsDetails {
+    /// Address of the user wallet
+    pub user_address: String,
+
+    /// reward amount acrrued for this bond in quantity of tokens
+    pub bonded_reward_amount_accrued: Uint128,
+
+    pub bonding_period_in_days: u16,
+
+    pub bonding_start_timestamp : Timestamp,
+}
+/// Map of users and list of their bonded rewards. the key is user name and the
+/// BondedRewardDetails will contain information about the users and rewards
+pub const BONDED_REWARDS_DETAILS: Map<String, Vec<BondedRewardsDetails>> =
+    Map::new("bonded_rewards_details");
+
 
 pub const SUB_REQ_ID: Item<u64> = Item::new("sub_req_id");
