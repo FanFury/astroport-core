@@ -26,7 +26,13 @@ export const walletTest10 = terraClient.wallets.test10;
 // export const marketing = "terra1wjq02nwcv6rq4zutq9rpsyq9k08rj30rhzgvt4";
 // export const advisory = "terra19rgzfvlvq0f82zyy4k7whrur8x9wnpfcj5j9g7";
 // export const sameerkey = "terra12g4sj6euv68kgx40k7mxu5xlm5sfat806umek7";
-const mk1 = new MnemonicKey({mnemonic: "awesome festival volume rifle diagram suffer rhythm knock unlock reveal marine transfer lumber faint walnut love hover beach amazing robust oppose moon west will",});
+let mk1 = new MnemonicKey({mnemonic: "priority rough worth change shop adapt ritual trap palm trust worth hidden shaft speak common parent armor fantasy artist retreat derive jeans remove glove",});
+export const liquidity_reward_wallet = terraClient.wallet(mk1);
+mk1 = new MnemonicKey({mnemonic: "kiwi bunker found artist script slim trade away sport manage manual receive obscure leader defense void bench mobile cricket naive surge pipe dream attend",});
+export const bonded_reward_wallet = terraClient.wallet(mk1);
+mk1 = new MnemonicKey({mnemonic: "wait tribe hard proud lyrics oblige enough assume tag appear breeze hint faculty tomato famous quarter elbow random across marine physical depart infant hobby",});
+export const treasury_wallet = terraClient.wallet(mk1);
+mk1 = new MnemonicKey({mnemonic: "awesome festival volume rifle diagram suffer rhythm knock unlock reveal marine transfer lumber faint walnut love hover beach amazing robust oppose moon west will",});
 export const mint_wallet = terraClient.wallet(mk1);
 
 export const swapinitMessage = {
