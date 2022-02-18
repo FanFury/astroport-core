@@ -5,6 +5,9 @@ import {
     walletTest1,
     walletTest2,
     walletTest3,
+    liquidity_reward_wallet,
+    bonded_reward_wallet,
+    treasury_wallet,
     mint_wallet,
     treasury_wallet,
     liquidity_wallet,
@@ -288,6 +291,15 @@ const instantiateProxyContract = async (deploymentDetails) => {
             authorized_liquidity_provider: deploymentDetails.authLiquidityProvider,
             default_lp_tokens_holder: deploymentDetails.defaultLPTokenHolder,
             swap_opening_date: "1644734115627110527",
+
+            pair_discount_rate: 700,
+            pair_bonding_period_in_days: 5,
+            pair_fury_provider: liquidity_reward_wallet,
+            native_discount_rate: 500,
+            native_bonding_period_in_days: 7,
+            native_fury_provider: bonded_reward_wallet,
+            default_lp_tokens_holder: treasury_wallet,
+
         }
         console.log(JSON.stringify(proxyInitMessage, null, 2));
         let result = await instantiateContract(mint_wallet, deploymentDetails.proxyCodeId, proxyInitMessage);
@@ -341,11 +353,8 @@ const createPoolPairs = async (deploymentDetails) => {
         writeArtifact(deploymentDetails, terraClient.chainID);
         executeMsg = {
             configure: {
-                admin_address: deploymentDetails.adminWallet,
                 pool_pair_address: deploymentDetails.poolPairContractAddress,
-                custom_token_address: deploymentDetails.furyContractAddress,
                 liquidity_token: deploymentDetails.poolLpTokenAddress,
-                authorized_liquidity_provider: deploymentDetails.adminWallet,
                 swap_opening_date: "1644734115627110528",
             }
         };
