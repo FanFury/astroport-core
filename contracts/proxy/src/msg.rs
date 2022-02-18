@@ -39,17 +39,13 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Configure {
         /// Administreator address of astroport
-        admin_address: String,
+        admin_address: Option<String>,
         /// Pool pair contract address of astroport
         pool_pair_address: Option<String>,
-        /// contract address of Fury token
-        custom_token_address: Option<String>,
         /// contract address of Liquidity token
         liquidity_token: Option<String>,
-        /// Authorized for direct provide_liquidity into the Pool
-        authorized_liquidity_provider: Option<String>,
         ///Time in nano seconds since EPOC when the swapping will be enabled
-        swap_opening_date: Uint64,
+        swap_opening_date: Option<Uint64>,
     },
     /// ## Description
     /// Receives a message of type [`Cw20ReceiveMsg`]

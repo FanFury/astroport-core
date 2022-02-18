@@ -38,7 +38,14 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let cfg = Config {
-        custom_token_address: msg.custom_token_address,
+        admin_address: addr_validate_to_lower(
+            deps.api,
+            msg.admin_address.as_str(),
+        )?,
+        custom_token_address: addr_validate_to_lower(
+            deps.api,
+            msg.custom_token_address.as_str(),
+        )?,
         pair_discount_rate: msg.pair_discount_rate,
         pair_bonding_period_in_days: msg.pair_bonding_period_in_days,
         pair_fury_provider: addr_validate_to_lower(
@@ -60,7 +67,8 @@ pub fn instantiate(
             msg.default_lp_tokens_holder.as_str(),
         )?,
         swap_opening_date: Timestamp::from_nanos(msg.swap_opening_date.u64()),
-        pool_pair_address: String::default(),
+        liquidity_token: Addr::unchecked(""),
+        pool_pair_address: Addr::unchecked(""),
     };
     CONFIG.save(deps.storage, &cfg)?;
     // configure_proxy(deps, env, info, None, msg.swap_opening_date)?;
@@ -92,19 +100,15 @@ pub fn execute(
         ExecuteMsg::Configure {
             admin_address,
             pool_pair_address,
-            custom_token_address,
             liquidity_token,
-            authorized_liquidity_provider,
             swap_opening_date,
         } => configure_proxy(
             deps, 
             env, 
             info, 
             admin_address, 
-            pool_pair_address, 
-            custom_token_address, 
+            pool_pair_address,
             liquidity_token, 
-            authorized_liquidity_provider, 
             swap_opening_date),
         ExecuteMsg::Receive(received_message) => {
             process_received_message(deps, env, info, received_message)
@@ -113,13 +117,11 @@ pub fn execute(
             assets,
             slippage_tolerance,
             auto_stake,
+            receiver,
         } => {
             let config = CONFIG.load(deps.storage)?;
-            let receiver: Option<String>;
-            if info.sender == config.authorized_liquidity_provider {
-                receiver = Some(config.authorized_liquidity_provider.to_string());
-            } else {
-                receiver = Some(config.default_lp_tokens_holder.to_string());
+            if info.sender != config.authorized_liquidity_provider {
+                return Err(ContractError::Unauthorized {})
             }
             provide_liquidity(
                 deps,
@@ -129,7 +131,7 @@ pub fn execute(
                 slippage_tolerance,
                 auto_stake,
                 receiver,
-				SubMessageNextAction::IncreaseAllowance,
+                SubMessageNextAction::IncreaseAllowance,
             )
         }
         ExecuteMsg::ProvidePairForReward {
@@ -148,7 +150,7 @@ pub fn execute(
                 slippage_tolerance,
                 auto_stake,
                 receiver,
-				SubMessageNextAction::TransferCustomAssetsFromFundsOwner,
+                SubMessageNextAction::TransferCustomAssetsFromFundsOwner,
             )
         }
         ExecuteMsg::ProvideNativeForReward {
@@ -157,24 +159,24 @@ pub fn execute(
             auto_stake,
         } => {
             let config = CONFIG.load(deps.storage)?;
-			let assets = [
-				Asset {
-					info: AssetInfo::NativeToken {
-						denom: "uusd".to_string(),
-					},
-					amount: asset.amount
-				},
-				Asset {
+            let assets = [
+                Asset {
+                    info: AssetInfo::NativeToken {
+                        denom: "uusd".to_string(),
+                    },
+                    amount: asset.amount
+                },
+                Asset {
                 info: AssetInfo::Token {
-						contract_addr: addr_validate_to_lower(deps.api, &config.custom_token_address)?
-					},
-					amount: Uint128::from(0u128),
-				},
-			];
+                        contract_addr: config.custom_token_address
+                    },
+                    amount: Uint128::from(0u128),
+                },
+            ];
 
             let receiver: Option<String>;
             receiver = Some(config.default_lp_tokens_holder.to_string());
-			provide_native_liquidity(
+            provide_native_liquidity(
                 deps,
                 env,
                 info,
@@ -221,12 +223,10 @@ fn configure_proxy(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    admin_address: String,
+    admin_address: Option<String>,
     pool_pair_address: Option<String>,
-    custom_token_address: Option<String>,
     liquidity_token: Option<String>,
-    authorized_liquidity_provider: Option<String>,
-    swap_opening_date: Uint64,
+    swap_opening_date: Option<Uint64>,
 ) -> Result<Response, ContractError> {
     // let sender_addr = info.sender.clone();
     // let contract_address = env.clone().contract.address;
@@ -238,45 +238,23 @@ fn configure_proxy(
     //     ))));
     // }
 
-    let mut config;
-    let config_load = CONFIG.load(deps.storage);
-
-    match config_load {
-        Ok(cfg) => {
-            config = cfg;
-            config.admin_address = addr_validate_to_lower(deps.api, &admin_address)?;
-            if let Some(pool_pair_address) = pool_pair_address {
-                config.pool_pair_address = addr_validate_to_lower(deps.api, &pool_pair_address)?;
-            }
-            if let Some(custom_token_address) = custom_token_address {
-                config.custom_token_address = addr_validate_to_lower(deps.api, &custom_token_address)?;
-            }
-            if let Some(liquidity_token) = liquidity_token {
-                config.liquidity_token = addr_validate_to_lower(deps.api, &liquidity_token)?;
-            }
-            if let Some(authorized_liquidity_provider) = authorized_liquidity_provider {
-                config.authorized_liquidity_provider = addr_validate_to_lower(deps.api, &authorized_liquidity_provider)?;
-            }
-            config.swap_opening_date = Timestamp::from_nanos(swap_opening_date.u64());
-        }
-        Err(e) => {
-            config = Config {
-                admin_address: addr_validate_to_lower(deps.api, &admin_address)?,
-                pool_pair_address: Addr::unchecked(""),
-                custom_token_address: Addr::unchecked(""),
-                liquidity_token: Addr::unchecked(""),
-                authorized_liquidity_provider: Addr::unchecked(""),
-                swap_opening_date: Timestamp::from_nanos(swap_opening_date.u64())
-            };
-            if let Some(pool_pair_address) = pool_pair_address {
-                config.pool_pair_address = addr_validate_to_lower(deps.api, &pool_pair_address)?;
-            }
-            if let Some(authorized_liquidity_provider) = authorized_liquidity_provider {
-                config.authorized_liquidity_provider = addr_validate_to_lower(deps.api, &authorized_liquidity_provider)?;
-            }
-        }
+    let mut config = CONFIG.load(deps.storage)?;
+    if info.sender != config.admin_address {
+        return Err(ContractError::Unauthorized {});
     }
 
+    if let Some(pool_pair_addr) = pool_pair_address {
+        config.pool_pair_address = addr_validate_to_lower(deps.api, &pool_pair_addr)?;
+    }
+    if let Some(admin_address) = admin_address {
+        config.admin_address = addr_validate_to_lower(deps.api, &admin_address)?;
+    }
+    if let Some(liquidity_token) = liquidity_token {
+        config.liquidity_token = addr_validate_to_lower(deps.api, &liquidity_token)?;
+    }
+    if let Some(swap_opening_date) = swap_opening_date {
+        config.swap_opening_date = Timestamp::from_nanos(swap_opening_date.u64());
+    }
     CONFIG.save(deps.storage, &config)?;
     Ok(Response::default())
 }
@@ -338,7 +316,7 @@ pub fn incr_allow_for_provide_liquidity(
     receiver: Option<String>,
     funds: Vec<Coin>,
     user_address: String,
-	is_fury_provided: bool,
+    is_fury_provided: bool,
 ) -> Result<Response, ContractError> {
     let mut resp = Response::new();
     let config: Config = CONFIG.load(deps.storage)?;
@@ -513,17 +491,17 @@ pub fn provide_native_liquidity(
     receiver: Option<String>,
 ) -> Result<Response, ContractError> {
     let user_address = info.sender.into_string();
-	transfer_custom_assets_from_funds_owner_to_proxy(
-		deps,
-		env,
-		assets,
-		slippage_tolerance,
-		auto_stake,
-		receiver,
-		info.funds,
-		user_address,
-		NO_FURY_PROVIDED,
-	)
+    transfer_custom_assets_from_funds_owner_to_proxy(
+        deps,
+        env,
+        assets,
+        slippage_tolerance,
+        auto_stake,
+        receiver,
+        info.funds,
+        user_address,
+        NO_FURY_PROVIDED,
+    )
 }
 
 pub fn transfer_custom_assets_from_funds_owner_to_proxy(
@@ -535,63 +513,63 @@ pub fn transfer_custom_assets_from_funds_owner_to_proxy(
     receiver: Option<String>,
     funds: Vec<Coin>,
     user_address: String,
-	is_fury_provided: bool,
+    is_fury_provided: bool,
 ) -> Result<Response, ContractError> {
     let mut fury_amount_provided = Uint128::zero();
     let mut ust_amount_provided = Uint128::zero();
-	if is_fury_provided {
-		if !assets[0].info.is_native_token() {
-			fury_amount_provided = assets[0].amount;
-			ust_amount_provided = assets[1].amount;
-		} else if !assets[1].info.is_native_token() {
-			fury_amount_provided = assets[1].amount;
-			ust_amount_provided = assets[0].amount;
-		}
-	} else {
-		if !assets[0].info.is_native_token() {
-			ust_amount_provided = assets[1].amount;
-		} else if !assets[1].info.is_native_token() {
-			ust_amount_provided = assets[0].amount;
-		}
-	}
+    if is_fury_provided {
+        if !assets[0].info.is_native_token() {
+            fury_amount_provided = assets[0].amount;
+            ust_amount_provided = assets[1].amount;
+        } else if !assets[1].info.is_native_token() {
+            fury_amount_provided = assets[1].amount;
+            ust_amount_provided = assets[0].amount;
+        }
+    } else {
+        if !assets[0].info.is_native_token() {
+            ust_amount_provided = assets[1].amount;
+        } else if !assets[1].info.is_native_token() {
+            ust_amount_provided = assets[0].amount;
+        }
+    }
 
     let mut resp = Response::new();
     let config = CONFIG.load(deps.storage)?;
     let pool_rsp : PoolResponse = deps.querier
         .query_wasm_smart(config.pool_pair_address, &to_binary(&Pool{})?)?;
-	let mut fury_equiv_for_ust;
+    let mut fury_equiv_for_ust;
     if pool_rsp.assets[0].info.is_native_token() {
         fury_equiv_for_ust = ust_amount_provided
-			.checked_mul(pool_rsp.assets[1].amount)
-			.unwrap_or_default()
-			.checked_div(pool_rsp.assets[0].amount)
-			.unwrap_or_default();
+            .checked_mul(pool_rsp.assets[1].amount)
+            .unwrap_or_default()
+            .checked_div(pool_rsp.assets[0].amount)
+            .unwrap_or_default();
     } else {
         fury_equiv_for_ust = ust_amount_provided
-			.checked_mul(pool_rsp.assets[0].amount)
-			.unwrap_or_default()
-			.checked_div(pool_rsp.assets[1].amount)
-			.unwrap_or_default();
+            .checked_mul(pool_rsp.assets[0].amount)
+            .unwrap_or_default()
+            .checked_div(pool_rsp.assets[1].amount)
+            .unwrap_or_default();
     }
     let fury_pre_discount;
-	let funds_owner;
-	let bonding_period_in_days;
+    let funds_owner;
+    let bonding_period_in_days;
     let mut discounted_rate = 10000u16; // 100 percent
-	if is_fury_provided {
-		if fury_equiv_for_ust > fury_amount_provided {
-			fury_equiv_for_ust = fury_amount_provided;
-		}
-		fury_pre_discount = Uint128::from(2u128) * fury_equiv_for_ust;
-		discounted_rate -= config.pair_discount_rate;
-		funds_owner = config.pair_fury_provider.to_string();
-		bonding_period_in_days = config.pair_bonding_period_in_days;
-	} else {
-		fury_pre_discount = fury_equiv_for_ust;
-		discounted_rate -= config.native_discount_rate;
-		funds_owner = config.native_fury_provider.to_string();
-		bonding_period_in_days = config.native_bonding_period_in_days;
-	}
-	
+    if is_fury_provided {
+        if fury_equiv_for_ust > fury_amount_provided {
+            fury_equiv_for_ust = fury_amount_provided;
+        }
+        fury_pre_discount = Uint128::from(2u128) * fury_equiv_for_ust;
+        discounted_rate -= config.pair_discount_rate;
+        funds_owner = config.pair_fury_provider.to_string();
+        bonding_period_in_days = config.pair_bonding_period_in_days;
+    } else {
+        fury_pre_discount = fury_equiv_for_ust;
+        discounted_rate -= config.native_discount_rate;
+        funds_owner = config.native_fury_provider.to_string();
+        bonding_period_in_days = config.native_bonding_period_in_days;
+    }
+    
     let total_fury_amount = fury_pre_discount
         .checked_div(Uint128::from(discounted_rate))
         .unwrap_or_default()
@@ -607,15 +585,15 @@ pub fn transfer_custom_assets_from_funds_owner_to_proxy(
         }
         None => {}
     }
-	let mut bonding_start_timestamp = config.swap_opening_date;
-	if config.swap_opening_date < env.block.time {
-		bonding_start_timestamp = env.block.time;
-	}
+    let mut bonding_start_timestamp = config.swap_opening_date;
+    if config.swap_opening_date < env.block.time {
+        bonding_start_timestamp = env.block.time;
+    }
     bonded_rewards_details.push(BondedRewardsDetails {
         user_address: user_address.to_string(),
         bonded_reward_amount_accrued: total_fury_amount,
         bonding_period_in_days: bonding_period_in_days,
-		bonding_start_timestamp: bonding_start_timestamp,
+        bonding_start_timestamp: bonding_start_timestamp,
     });
     BONDED_REWARDS_DETAILS.save(deps.storage, user_address.to_string(), &bonded_rewards_details)?;
 
@@ -675,7 +653,7 @@ pub fn provide_liquidity(
     slippage_tolerance: Option<Decimal>,
     auto_stake: Option<bool>,
     receiver: Option<String>,
-	next_action: SubMessageNextAction,
+    next_action: SubMessageNextAction,
 ) -> Result<Response, ContractError> {
     let mut resp = Response::new();
     let config: Config = CONFIG.load(deps.storage)?;

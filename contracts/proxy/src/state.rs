@@ -5,8 +5,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
+    /// administrator address
+    pub admin_address: Addr,
     /// contract address of Fury token
-    pub custom_token_address: String,
+    pub custom_token_address: Addr,
 
     /// discount_rate when fury and UST are both provided
     pub pair_discount_rate: u16,
@@ -30,11 +32,11 @@ pub struct Config {
     /// authorised_liquidity_provider will be stored to this address
     pub default_lp_tokens_holder: Addr,
     ///Time in nano seconds since EPOC when the swapping will be enabled
-
-    pub admin_address: Addr,
-    pub pool_pair_address: Addr,
-    pub liquidity_token: Addr,
     pub swap_opening_date: Timestamp,
+    /// Liquidity Pool contract address
+    pub pool_pair_address: Addr,
+    /// LP token contract address
+    pub liquidity_token: Addr,
 }
 // put the length bytes at the first for compatibility with legacy singleton store
 pub const CONFIG: Item<Config> = Item::new("\u{0}\u{6}config");
