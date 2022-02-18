@@ -236,18 +236,16 @@ const instantiateProxyContract = async (deploymentDetails) => {
         console.log("Instantiating proxy contract");
         let proxyInitMessage = {
             admin_address: deploymentDetails.adminWallet,
-            /// contract address of Fury token
             custom_token_address: deploymentDetails.furyContractAddress,
             authorized_liquidity_provider: deploymentDetails.adminWallet,
             swap_opening_date: "1644734115627110527",
-
             pair_discount_rate: 700,
             pair_bonding_period_in_days: 5,
-            pair_fury_provider: liquidity_reward_wallet,
+            pair_fury_provider: liquidity_reward_wallet.key.accAddress,
             native_discount_rate: 500,
             native_bonding_period_in_days: 7,
-            native_fury_provider: bonded_reward_wallet,
-            default_lp_tokens_holder: treasury_wallet,
+            native_fury_provider: bonded_reward_wallet.key.accAddress,
+            default_lp_tokens_holder: treasury_wallet.key.accAddress,
 
         }
         console.log(JSON.stringify(proxyInitMessage, null, 2));
