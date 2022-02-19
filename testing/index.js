@@ -9,7 +9,7 @@ import {
     bonded_reward_wallet,
     treasury_wallet,
     mint_wallet,
-    treasury_wallet,
+    // treasury_wallet,
     liquidity_wallet,
     marketing_wallet,
     terraClient,
