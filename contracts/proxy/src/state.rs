@@ -16,6 +16,8 @@ pub struct Config {
     pub pair_bonding_period_in_days: u16,
     /// This address has the fury reward funds when fury and UST are both provided
     pub pair_fury_provider: Addr,
+    /// The LP tokens for pair liquidity providers will be stored to this address
+    pub pair_lp_tokens_holder: Addr,
 
     /// discount_rate when only UST provided
     pub native_discount_rate: u16,
@@ -28,9 +30,6 @@ pub struct Config {
     /// The LP tokens for this address will be returned to this address
     pub authorized_liquidity_provider: Addr,
 
-    /// The LP tokens for all liquidity providers except
-    /// authorised_liquidity_provider will be stored to this address
-    pub default_lp_tokens_holder: Addr,
     ///Time in nano seconds since EPOC when the swapping will be enabled
     pub swap_opening_date: Timestamp,
     /// Liquidity Pool contract address

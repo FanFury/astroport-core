@@ -62,9 +62,9 @@ pub fn instantiate(
             deps.api,
             msg.authorized_liquidity_provider.as_str(),
         )?,
-        default_lp_tokens_holder: addr_validate_to_lower(
+        pair_lp_tokens_holder: addr_validate_to_lower(
             deps.api,
-            msg.default_lp_tokens_holder.as_str(),
+            msg.pair_lp_tokens_holder.as_str(),
         )?,
         swap_opening_date: Timestamp::from_nanos(msg.swap_opening_date.u64()),
         liquidity_token: Addr::unchecked(""),
@@ -141,7 +141,7 @@ pub fn execute(
         } => {
             let config = CONFIG.load(deps.storage)?;
             let receiver: Option<String>;
-            receiver = Some(config.default_lp_tokens_holder.to_string());
+            receiver = Some(config.pair_lp_tokens_holder.to_string());
             provide_liquidity(
                 deps,
                 env,
@@ -173,9 +173,9 @@ pub fn execute(
                     amount: Uint128::from(0u128),
                 },
             ];
-
+            // NOTE : just for place holder , as no LPToken should be issued in this case
             let receiver: Option<String>;
-            receiver = Some(config.default_lp_tokens_holder.to_string());
+            receiver = Some(config.pair_lp_tokens_holder.to_string());
             provide_native_liquidity(
                 deps,
                 env,

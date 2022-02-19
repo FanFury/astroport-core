@@ -73,8 +73,8 @@ const proceedToSetup = async (deploymentDetails) => {
     if (!deploymentDetails.authLiquidityProvider) {
         deploymentDetails.authLiquidityProvider = treasury_wallet.key.accAddress;
     }
-    if (!deploymentDetails.defaultLPTokenHolder) {
-        deploymentDetails.defaultLPTokenHolder = liquidity_wallet.key.accAddress;
+    if (!deploymentDetails.pairLPTokenHolder) {
+        deploymentDetails.pairLPTokenHolder = liquidity_wallet.key.accAddress;
     }
     uploadFuryTokenContract(deploymentDetails).then(() => {
         instantiateFuryTokenContract(deploymentDetails).then(() => {
@@ -91,10 +91,12 @@ const proceedToSetup = async (deploymentDetails) => {
                                                     queryPorxyConfiguration(deploymentDetails).then(() => {
                                                         createPoolPairs(deploymentDetails).then(() => {
                                                             savePairAddressToProxy(deploymentDetails).then(() => {
-                                                                queryPorxyConfiguration(deploymentDetails).then(() => {
-                                                                    console.log("deploymentDetails = " + JSON.stringify(deploymentDetails, null, ' '));
-                                                                    rl.close();
-                                                                    performOperations(deploymentDetails);
+                                                                provideLiquidityAuthorised(deploymentDetails,1000000000,500000000).then(() => {
+                                                                    queryPorxyConfiguration(deploymentDetails).then(() => {
+                                                                        console.log("deploymentDetails = " + JSON.stringify(deploymentDetails, null, ' '));
+                                                                        rl.close();
+                                                                        performOperations(deploymentDetails);
+                                                                    });
                                                                 });
                                                             });
                                                         });
@@ -133,7 +135,7 @@ const uploadFuryTokenContract = async (deploymentDetails) => {
         }
         if (deployFury) {
             console.log("Uploading Fury token contract");
-            console.log(`mint_wallet = ${mint_wallet.key}`);
+            console.log(`mint_wallet = ${mint_wallet.key.accAddress}`);
             let contractId = await storeCode(mint_wallet, MintingContractPath); // Getting the contract id from local terra
             console.log(`Fury Token Contract ID: ${contractId}`);
             deploymentDetails.furyTokenCodeId = contractId;
@@ -169,7 +171,7 @@ const transferFuryToTreasury = async (deploymentDetails) => {
     let transferFuryToTreasuryMsg = {
         transfer: {
             recipient: treasury_wallet.key.accAddress,
-            amount: "5000000000"
+            amount: "1000000000000"
         }
     };
     console.log(`transferFuryToTreasuryMsg = ${JSON.stringify(transferFuryToTreasuryMsg)}`);
@@ -288,7 +290,7 @@ const instantiateProxyContract = async (deploymentDetails) => {
             admin_address: deploymentDetails.adminWallet,
             custom_token_address: deploymentDetails.furyContractAddress,
             authorized_liquidity_provider: deploymentDetails.authLiquidityProvider,
-            default_lp_tokens_holder: deploymentDetails.defaultLPTokenHolder,
+            pair_lp_tokens_holder: deploymentDetails.pairLPTokenHolder,
             swap_opening_date: "1644734115627110527",
             pair_discount_rate: 700,
             pair_bonding_period_in_days: 5,
@@ -336,7 +338,7 @@ const createPoolPairs = async (deploymentDetails) => {
                 init_params: Buffer.from(JSON.stringify(init_param)).toString('base64')
             }
         };
-        console.log(`executeMsg = ${executeMsg}`);
+        console.log(`executeMsg = ${JSON.stringify(executeMsg)}`);
         let response = await executeContract(mint_wallet, deploymentDetails.factoryAddress, executeMsg);
 
         deploymentDetails.poolPairContractAddress = response.logs[0].eventsByType.from_contract.pair_contract_addr[0]
@@ -356,7 +358,7 @@ const createPoolPairs = async (deploymentDetails) => {
                 swap_opening_date: "1644734115627110528",
             }
         };
-        console.log(`Proxy config - executeMsg = ${executeMsg}`);
+        console.log(`Proxy config - executeMsg = ${JSON.stringify(executeMsg)}`);
         response = await executeContract(mint_wallet, deploymentDetails.proxyContractAddress, executeMsg);
     }
 }
@@ -372,7 +374,7 @@ const savePairAddressToProxy = async (deploymentDetails) => {
         let executeMsg = {
             configure: configResponse
         };
-        console.log(`executeMsg = ${executeMsg}`);
+        console.log(`executeMsg = ${JSON.stringify(executeMsg)}`);
         let response = await executeContract(mint_wallet, deploymentDetails.proxyContractAddress, executeMsg);
         console.log(`Save Response - ${response['txhash']}`);
         deploymentDetails.poolpairSavedToProxy = true;
@@ -383,17 +385,17 @@ const savePairAddressToProxy = async (deploymentDetails) => {
 const performOperations = async (deploymentDetails) => {
     checkLPTokenDetails(deploymentDetails).then(() => {
         checkLPTokenBalances(deploymentDetails).then(() => {
-            provideLiquidityAuthorised(deploymentDetails).then(() => {
+            provideLiquidityAuthorised(deploymentDetails,10000000,5000000).then(() => {
                 checkLPTokenBalances(deploymentDetails).then(() => {
                     queryPool(deploymentDetails).then(() => {
                         performSimulation(deploymentDetails).then(() => {
                             performSwap(deploymentDetails).then(() => {
                                 checkLPTokenBalances(deploymentDetails).then(() => {
-                                    provideLiquidityGeneral(deploymentDetails).then(() => {
-                                        checkLPTokenBalances(deploymentDetails).then(() => {
+                                    //provideLiquidityGeneral(deploymentDetails,10000000,5000000).then(() => {
+                                    //    checkLPTokenBalances(deploymentDetails).then(() => {
                                             console.log("Finished operations");
-                                        });
-                                    });
+                                    //    });
+                                    //});
                                 });
                             });
                         });
@@ -416,32 +418,23 @@ const checkLPTokenBalances = async (deploymentDetails) => {
     await queryContract(deploymentDetails.poolLpTokenAddress, {
         all_accounts: {}
     }).then((allAccounts) => {
-        console.log(JSON.stringify(allAccounts.accounts));
-        queryContract(deploymentDetails.poolLpTokenAddress, {
-            balance: { address: allAccounts.accounts[0] }
-        }).then((balance0) => {
-            console.log(`Balance of ${allAccounts.accounts[0]} : ${JSON.stringify(balance0)}`);
-            queryContract(deploymentDetails.poolLpTokenAddress, {
-                balance: { address: allAccounts.accounts[1] }
-            }).then((balance1) => {
-                console.log(`Balance of ${allAccounts.accounts[1]} : ${JSON.stringify(balance1)}`);
-            });
-        });
+        console.log(`Accounts with LPToken = ${JSON.stringify(allAccounts)}`);
+    });
     // allAccounts.accounts.forEach((account) => {
         //     let balance = await queryContract(deploymentDetails.poolLpTokenAddress, {
         //         balance: { address: account }
         //     });
         //     console.log(`Balance of ${account} : ${JSON.stringify(balance)}`);
         // });
-    });
+    
 }
 
-const provideLiquidityAuthorised = async (deploymentDetails) => {
-    //First increase allowance for proxy to spend from mint_wallet wallet
+const provideLiquidityAuthorised = async (deploymentDetails,amountFury,amountUst) => {
+    //First increase allowance for proxy to spend from treasury_wallet wallet
     let increaseAllowanceMsg = {
         increase_allowance: {
             spender: deploymentDetails.proxyContractAddress,
-            amount: "5000000000"
+            amount: amountFury.toString()
         }
     };
     let incrAllowResp = await executeContract(treasury_wallet, deploymentDetails.furyContractAddress, increaseAllowanceMsg);
@@ -455,7 +448,7 @@ const provideLiquidityAuthorised = async (deploymentDetails) => {
                             denom: "uusd"
                         }
                     },
-                    amount: "500000000"
+                    amount: amountUst.toString()
                 },
                 {
                     info: {
@@ -463,17 +456,17 @@ const provideLiquidityAuthorised = async (deploymentDetails) => {
                             contract_addr: deploymentDetails.furyContractAddress
                         }
                     },
-                    amount: "5000000000"
+                    amount: amountFury.toString()
                 }
             ],
-            receiver: deploymentDetails.adminWallet
+            receiver: deploymentDetails.treasury_wallet
         }
     };
-    let tax = await terraClient.utils.calculateTax(new Coin("uusd", "500000000"));
+    let tax = await terraClient.utils.calculateTax(new Coin("uusd", amountUst.toString()));
     console.log(`tax = ${tax}`);
-    let funds = Number(500000000);
+    let funds = amountUst;
     funds = funds + Number(tax.amount);
-    console.log(`funds = ${funds}`);
+    console.log(`funds ust = ${funds}, fury = ${amountFury}`);
     let response = await executeContract(treasury_wallet, deploymentDetails.proxyContractAddress, executeMsg, { 'uusd': funds });
     console.log(`Provide Liquidity (from treasury) Response - ${response['txhash']}`);
 }
