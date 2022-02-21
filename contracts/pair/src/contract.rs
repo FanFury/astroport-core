@@ -328,9 +328,9 @@ pub fn provide_liquidity(
     receiver: Option<String>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    if config.proxy_contract_addr != info.sender {
-        return Err(ContractError::Std(StdError::generic_err(format!("proxy_addr = {:?} and sender = {:?}", config.proxy_contract_addr, info.sender))));
-    }
+    // if config.proxy_contract_addr != info.sender {
+    //     return Err(ContractError::Std(StdError::generic_err(format!("proxy_addr = {:?} and sender = {:?}", config.proxy_contract_addr, info.sender))));
+    // }
 
     assets[0].info.check(deps.api)?;
     assets[1].info.check(deps.api)?;
@@ -461,14 +461,14 @@ fn mint_liquidity_token_message(
     // If no auto-stake - just mint to recipient
     if !auto_stake {
         return Ok(vec![CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: lp_token.to_string(),
-        msg: to_binary(&Cw20ExecuteMsg::Mint {
-            recipient: recipient.to_string(),
-            amount,
-        })?,
-        funds: vec![],
-    })]);
-}
+            contract_addr: lp_token.to_string(),
+            msg: to_binary(&Cw20ExecuteMsg::Mint {
+                recipient: recipient.to_string(),
+                amount,
+            })?,
+            funds: vec![],
+        })]);
+    }
 
     // Mint to contract and stake to generator
     let generator =
