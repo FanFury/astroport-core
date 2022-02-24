@@ -12,9 +12,14 @@ import {
 import { MsgSend, LCDClient } from '@terra-money/terra.js';
 
 // To use LocalTerra
-const terra = new LCDClient({
-    URL: 'http://localhost:1317',
-    chainID: 'localterra'
+// const terra = new LCDClient({
+//     URL: 'http://localhost:1317',
+//     chainID: 'localterra'
+// });
+
+export const terra = new LCDClient({
+  URL: 'https://bombay-lcd.terra.dev',
+  chainID: 'bombay-12',
 });
 
 export const primeAccountsWithFunds = async () => {
@@ -34,7 +39,7 @@ function fundMintingWallet() {
         const send1 = new MsgSend(
             walletTest1.key.accAddress,
             mint_wallet.key.accAddress,
-            { uluna: 500000000000000, uusd: 500000000000000 }
+            { uluna: 500000000, uusd: 10000000000 }
         );
 
         walletTest1
@@ -56,7 +61,8 @@ function fundTreasuryWallet() {
         const send2 = new MsgSend(
             walletTest2.key.accAddress,
             treasury_wallet.key.accAddress,
-            { uluna: 500000000000000, uusd: 500000000000000 }
+            { uluna: 500000000, uusd: 10000000000 }
+            
         );
 
         walletTest2
@@ -78,7 +84,7 @@ function fundLiquidityWallet() {
         const send = new MsgSend(
             walletTest3.key.accAddress,
             liquidity_wallet.key.accAddress,
-            { uluna: 500000000000000, uusd: 500000000000000 }
+            { uluna: 500000000, uusd: 10000000000 }
         );
 
         walletTest3
@@ -100,7 +106,7 @@ function fundMarketingWallet() {
         const send = new MsgSend(
             walletTest4.key.accAddress,
             marketing_wallet.key.accAddress,
-            { uluna: 500000000000000, uusd: 500000000000000 }
+            { uluna: 500000000, uusd: 10000000000 }
         );
 
         walletTest4

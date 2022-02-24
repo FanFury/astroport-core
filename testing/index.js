@@ -2,9 +2,6 @@ import {
     mintInitMessage,
     MintingContractPath,
     PairContractPath,
-    walletTest1,
-    walletTest2,
-    walletTest3,
     mint_wallet,
     treasury_wallet,
     liquidity_wallet,
@@ -44,7 +41,7 @@ let configResponseReceived;
 
 const main = async () => {
     try {
-        terraClient.chainID = "localterra";
+        terraClient.chainID = "bombay-12";
         let deploymentDetails = readArtifact(terraClient.chainID);
         const primeAccounts = await question('Do you want to preload custom accounts? (y/N) ');
         if (primeAccounts === 'Y' || primeAccounts === 'y') {

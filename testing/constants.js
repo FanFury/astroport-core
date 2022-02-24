@@ -10,8 +10,10 @@ export const WhitelistContractPath = "../artifacts/astroport_whitelist.wasm"
 export const FactoryContractPath = "../artifacts/astroport_factory.wasm"
 export const ProxyContractPath = "../artifacts/astroport_proxy.wasm"
 
-export const terraClient = new LocalTerra();
-
+export const terraClient = new LCDClient({
+    URL: 'https://bombay-lcd.terra.dev',
+    chainID: 'bombay-12',
+});
 // Accounts
 export const deployer = terraClient.wallets.test1; // used as operator on all contracts
 // These can be the client wallets to interact
@@ -48,14 +50,14 @@ export const mintInitMessage = {
     symbol: "FURY",
     decimals: 6,
     initial_balances: [
-        {address: "terra1ttjw6nscdmkrx3zhxqx3md37phldgwhggm345k",amount: "410000000000000"},
-        {address: "terra1m46vy0jk9wck6r9mg2n8jnxw0y4g4xgl3csh9h",amount: "0"},
-        {address: "terra1k20rlfj3ea47zjr2sp672qqscck5k5mf3uersq",amount: "0"},
-        {address: "terra1wjq02nwcv6rq4zutq9rpsyq9k08rj30rhzgvt4",amount: "0"},
-        {address: "terra19rgzfvlvq0f82zyy4k7whrur8x9wnpfcj5j9g7",amount: "0"},
-        {address: "terra12g4sj6euv68kgx40k7mxu5xlm5sfat806umek7",amount: "0"},
+        {address: "terra1ttjw6nscdmkrx3zhxqx3md37phldgwhggm345k", amount: "410000000000000"},
+        {address: "terra1m46vy0jk9wck6r9mg2n8jnxw0y4g4xgl3csh9h", amount: "0"},
+        {address: "terra1k20rlfj3ea47zjr2sp672qqscck5k5mf3uersq", amount: "0"},
+        {address: "terra1wjq02nwcv6rq4zutq9rpsyq9k08rj30rhzgvt4", amount: "0"},
+        {address: "terra19rgzfvlvq0f82zyy4k7whrur8x9wnpfcj5j9g7", amount: "0"},
+        {address: "terra12g4sj6euv68kgx40k7mxu5xlm5sfat806umek7", amount: "0"},
         {address: deployer.key.accAddress, amount: "010000000000000"},
-        ],
+    ],
     mint: {
         minter: "terra1ttjw6nscdmkrx3zhxqx3md37phldgwhggm345k",
         cap: "420000000000000"
