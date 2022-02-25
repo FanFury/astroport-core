@@ -6,6 +6,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
 pub struct InstantiateMsg {
+    /// admin address for configuration activities
+    pub admin_address: String,
+
     /// contract address of Fury token
     pub custom_token_address: String,
 

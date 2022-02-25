@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
+    /// admin address for configuration activities
+    pub admin_address: Addr,
     /// contract address of Fury token
     pub custom_token_address: Addr,
     

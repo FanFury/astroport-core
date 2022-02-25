@@ -36,6 +36,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let mut cfg = Config {
+        admin_address: addr_validate_to_lower(deps.api, msg.admin_address.as_str())?,
         custom_token_address: addr_validate_to_lower(deps.api, msg.custom_token_address.as_str())?,
         pair_discount_rate: msg.pair_discount_rate,
         pair_bonding_period_in_sec: msg.pair_bonding_period_in_sec,
@@ -244,6 +245,10 @@ fn configure_proxy(
     // }
 
     let mut config = CONFIG.load(deps.storage)?;
+    if info.sender != config.admin_address {
+        return Err(ContractError::Unauthorized {});
+    }
+
     if let Some(pool_pair_addr) = pool_pair_address {
         config.pool_pair_address = pool_pair_addr;
     }
@@ -281,21 +286,6 @@ fn process_received_message(
         Ok(ProxyCw20HookMsg::WithdrawLiquidity {}) => {
             withdraw_liquidity(deps, env, info, received_message)
         }
-        // Ok(ProxyCw20HookMsg::ProvideLiquidity {
-        //     assets,
-        //     slippage_tolerance,
-        //     auto_stake,
-        //     receiver,
-        // }) => provide_liquidity(
-        //     deps,
-        //     env,
-        //     info,
-        //     assets,
-        //     slippage_tolerance,
-        //     auto_stake,
-        //     receiver,
-        //     SubMessageNextAction::IncreaseAllowance,
-        // ),
         Err(err) => Err(ContractError::Std(err)),
     }
     // Ok(Response::default())
@@ -444,6 +434,9 @@ pub fn forward_swap_to_astro(
     received_message: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
     let config: Config = CONFIG.load(deps.storage)?;
+    if info.sender != config.custom_token_address {
+        return Err(ContractError::Unauthorized {});
+    }
     let send_msg = Cw20ExecuteMsg::Send {
         contract: config.pool_pair_address,
         amount: received_message.amount,
