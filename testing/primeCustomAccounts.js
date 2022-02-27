@@ -10,7 +10,7 @@ import {
     terraClient
 } from './constants.js';
 
-import {MsgSend, LCDClient} from '@terra-money/terra.js';
+import { MsgSend } from '@terra-money/terra.js';
 
 export async function primeAccountsWithFunds() {
     var txHash = [];
@@ -29,7 +29,7 @@ function fundMintingWallet() {
         const send1 = new MsgSend(
             walletTest1.key.accAddress,
             mint_wallet.key.accAddress,
-            {uluna: 500000000, uusd: 10000000000}
+            { uluna: 500000000, uusd: 10000000000 }
         );
 
         walletTest1
@@ -55,7 +55,7 @@ function fundTreasuryWallet() {
         const send2 = new MsgSend(
             walletTest2.key.accAddress,
             treasury_wallet.key.accAddress,
-            {uluna: 500000000, uusd: 10000000000}
+            { uluna: 500000000, uusd: 10000000000 }
         );
 
         walletTest2
@@ -81,7 +81,7 @@ function fundLiquidityWallet() {
         const send = new MsgSend(
             walletTest3.key.accAddress,
             liquidity_wallet.key.accAddress,
-            {uluna: 500000000, uusd: 10000000000}
+            { uluna: 500000000, uusd: 10000000000 }
         );
 
         walletTest3
@@ -107,7 +107,7 @@ function fundMarketingWallet() {
         const send = new MsgSend(
             walletTest4.key.accAddress,
             marketing_wallet.key.accAddress,
-            {uluna: 500000000, uusd: 10000000000}
+            { uluna: 500000000, uusd: 10000000000 }
         );
 
         walletTest4
