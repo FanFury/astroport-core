@@ -14,7 +14,7 @@ export const terraTestnetClient = new LCDClient({
     URL: 'https://bombay-lcd.terra.dev',
     chainID: 'bombay-12',
 });
-
+terraTestnetClient.chainID = "bombay-12";
 export const localTerraClient = new LocalTerra();
 localTerraClient.chainID = "localterra";
 
@@ -31,10 +31,10 @@ console.log("terraClient.chainID = " + terraClient.chainID);
 const mk1 = new MnemonicKey({mnemonic: "awesome festival volume rifle diagram suffer rhythm knock unlock reveal marine transfer lumber faint walnut love hover beach amazing robust oppose moon west will",});
 export const mint_wallet = terraClient.wallet(mk1);
 
-const mk2 = new MnemonicKey({mnemonic: "kiwi habit donor choice control fruit fame hamster trip aerobic juice lens lawn popular fossil taste venture furnace october income advice window opera helmet",});
+const mk2 = new MnemonicKey({mnemonic: "wait tribe hard proud lyrics oblige enough assume tag appear breeze hint faculty tomato famous quarter elbow random across marine physical depart infant hobby",});
 export const treasury_wallet = terraClient.wallet(mk2);
 
-const mk3 = new MnemonicKey({mnemonic: "job dilemma fold hurry solar strong solar priority lawsuit pass demise senior purpose useless outdoor jaguar identify enhance dirt vehicle fun nasty dragon still",});
+const mk3 = new MnemonicKey({mnemonic: "priority rough worth change shop adapt ritual trap palm trust worth hidden shaft speak common parent armor fantasy artist retreat derive jeans remove glove",});
 export const liquidity_wallet = terraClient.wallet(mk3);
 
 

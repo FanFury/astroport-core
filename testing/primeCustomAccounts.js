@@ -6,16 +6,11 @@ import {
     mint_wallet,
     treasury_wallet,
     liquidity_wallet,
-    marketing_wallet
+    marketing_wallet,
+    terraClient
 } from './constants.js';
 
 import {MsgSend, LCDClient} from '@terra-money/terra.js';
-
-// To use LocalTerra
-const terra = new LCDClient({
-    URL: 'https://bombay-lcd.terra.dev',
-    chainID: 'bombay-12',
-});
 
 export async function primeAccountsWithFunds() {
     var txHash = [];
@@ -42,10 +37,14 @@ function fundMintingWallet() {
                 msgs: [send1],
                 memo: 'Initial Funding!',
             })
-            .then(tx => terra.tx.broadcast(tx))
+            .then(tx => terraClient.tx.broadcast(tx))
             .then(result => {
                 console.log(result.txhash);
-                resolve(result.txhash);
+                if (result.height == 0) {
+                    resolve("Failed. Please fund the wallet externally!")
+                } else {
+                    resolve(result.txhash);
+                }
             });
     })
 }
@@ -64,10 +63,14 @@ function fundTreasuryWallet() {
                 msgs: [send2],
                 memo: 'Initial Funding!',
             })
-            .then(tx => terra.tx.broadcast(tx))
+            .then(tx => terraClient.tx.broadcast(tx))
             .then(result => {
                 console.log(result.txhash);
-                resolve(result.txhash);
+                if (result.height == 0) {
+                    resolve("Failed. Please fund the wallet externally!")
+                } else {
+                    resolve(result.txhash);
+                }
             });
     })
 }
@@ -86,10 +89,14 @@ function fundLiquidityWallet() {
                 msgs: [send],
                 memo: 'Initial Funding!',
             })
-            .then(tx => terra.tx.broadcast(tx))
+            .then(tx => terraClient.tx.broadcast(tx))
             .then(result => {
                 console.log(result.txhash);
-                resolve(result.txhash);
+                if (result.height == 0) {
+                    resolve("Failed. Please fund the wallet externally!")
+                } else {
+                    resolve(result.txhash);
+                }
             });
     })
 }
@@ -108,10 +115,14 @@ function fundMarketingWallet() {
                 msgs: [send],
                 memo: 'Initial Funding!',
             })
-            .then(tx => terra.tx.broadcast(tx))
+            .then(tx => terraClient.tx.broadcast(tx))
             .then(result => {
                 console.log(result.txhash);
-                resolve(result.txhash);
+                if (result.height == 0) {
+                    resolve("Failed. Please fund the wallet externally!")
+                } else {
+                    resolve(result.txhash);
+                }
             });
     })
 }

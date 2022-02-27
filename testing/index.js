@@ -42,7 +42,12 @@ const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
-const question = promisify(rl.question).bind(rl);
+// const question = promisify(rl.question).bind(rl);
+function question(query) {
+    return new Promise(resolve => {
+        rl.question(query, resolve);
+    })
+}
 
 let configResponseReceived;
 
@@ -62,6 +67,8 @@ const main = async () => {
         }
     } catch (error) {
         console.log(error);
+    } finally {
+        rl.close();
     }
 }
 
