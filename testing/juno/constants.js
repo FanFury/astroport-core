@@ -5,9 +5,8 @@ import {Cosmos} from "@cosmostation/cosmosjs";
 * Use This command To Up the Local JUNO
 * */
 const chainId = "testing"
-const lcdUrl = "http://localhost:1337"
+const lcdUrl = "http://localhost:1317"
 // Copy Memonic from the Terminal in which the Juno Node contrainer was upped
-export const mnemonic = "crowd design strike slight crunch away physical panda fiber tone suspect wheel north " +
-    "stamp window inside inform end output spy there impact enter pudding"
+export const mnemonic = "clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose"
 export const cosmos = new Cosmos(lcdUrl, chainId);
 

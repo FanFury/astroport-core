@@ -1,18 +1,19 @@
 import {mnemonic} from "./constants.js";
 import message from "@cosmostation/cosmosjs/src/messages/proto.js";
 
-const {cosmos} = require("./constants.js");
+import {cosmos} from "./constants.js";
 
-let address = "juno1k02l3nzh7d7kzvmfd64h66eulj2h2qqdecwng2"
+let address = "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
 
 const privKey = cosmos.getECPairPriv(mnemonic);
 const pubKeyAny = cosmos.getPubKeyAny(privKey);
 console.log(pubKeyAny)
 cosmos.getAccounts(address).then(data => {
+    console.log(data);
     const msgSend = new message.cosmos.bank.v1beta1.MsgSend({
         from_address: address,
-        to_address: "juno1k02l3nzh7d7kzvmfd64h66eulj2h2qqdecwng2",
-        amount: [{denom: "ujuno", amount: String(100000)}]
+        to_address: "juno1gcxq5hzxgwf23paxld5c9z0derc9ac4m5g63xa",
+        amount: [{denom: "ujunox", amount: String(100)}]
     });
     const msgSendAny = new message.google.protobuf.Any({
         type_url: "/cosmos.bank.v1beta1.MsgSend",
@@ -25,7 +26,7 @@ cosmos.getAccounts(address).then(data => {
         sequence: data.account.sequence
     });
     const feeValue = new message.cosmos.tx.v1beta1.Fee({
-        amount: [{denom: "uatom", amount: String(5000)}],
+        amount: [{denom: "ujunox", amount: String(500)}],
         gas_limit: 200000
     });
     const authInfo = new message.cosmos.tx.v1beta1.AuthInfo({signer_infos: [signerInfo], fee: feeValue});
