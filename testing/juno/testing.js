@@ -1,14 +1,13 @@
-import {mnemonic} from "./constants.js";
+import {cosmos, mnemonic} from "./constants.js";
 import message from "@cosmostation/cosmosjs/src/messages/proto.js";
 
-import {cosmos} from "./constants.js";
+let address = cosmos.getAddress(mnemonic)
 
-let address = "juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y"
 
-const privKey = cosmos.getECPairPriv(mnemonic);
-const pubKeyAny = cosmos.getPubKeyAny(privKey);
-console.log(pubKeyAny)
 cosmos.getAccounts(address).then(data => {
+    const privKey = cosmos.getECPairPriv(mnemonic);
+    const pubKeyAny = cosmos.getPubKeyAny(privKey);
+    console.log(pubKeyAny)
     console.log(data);
     const msgSend = new message.cosmos.bank.v1beta1.MsgSend({
         from_address: address,
