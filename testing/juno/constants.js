@@ -7,7 +7,7 @@ Use This command To Up the Local JUNO
 const chainId = "testing"
 const lcdUrl = "http://127.0.0.1:1317"
 // Copy Memonic from the Terminal in which the Juno Node contrainer was upped
-export const mnemonic = "ocean elevator conduct amazing december program coyote regular shoulder quote script grace matrix film alley accident indicate stock require practice inhale shock symbol soul"
+export const mnemonic = "ice enhance trash resemble syrup comic fashion tuition wrong belt fetch exit embody shield confirm cousin amused smart chair elite owner type clutch path"
 export const cosmos = new Cosmos(lcdUrl, chainId);
 cosmos.setBech32MainPrefix("juno")
 console.log(cosmos.bech32MainPrefix)

@@ -1,5 +1,6 @@
 import {cosmos, mnemonic} from "./constants.js";
 import message from "@cosmostation/cosmosjs/src/messages/proto.js";
+import fs from "fs";
 
 
 export class Wallet {
@@ -32,8 +33,6 @@ export class Wallet {
                 return response
             });
         })
-
-
     }
 
     send_funds(to_address, coins) {
@@ -66,8 +65,7 @@ export class Wallet {
     }
 
     get_execute(message, contract) {
-        // TODO Messge JSON here needs to be stringified
-        let transferBytes = new Buffer(message);
+        let transferBytes = new Buffer(JSON.stringify(message));
         const msgExecuteContract = new message.cosmwasm.wasm.v1.MsgExecuteContract({
             sender: this.wallet_address,
             contract: contract,
@@ -78,6 +76,19 @@ export class Wallet {
             type_url: "/cosmwasm.wasm.v1.MsgExecuteContract",
             value: message.cosmwasm.wasm.v1.MsgExecuteContract.encode(msgExecuteContract).finish()
         })
+    }
+
+    query(address, query) {
+        cosmos.wasmQuery(
+            address,
+            JSON.stringify(query)
+        ).then(json => {
+            return json
+        })
+    }
+
+    upload(file) {
+        const code = fs.readFileSync(file).toString("base64");
     }
 
 
