@@ -10,6 +10,7 @@
   "author": "Nitin Khobragade",
   "license": "ISC",
   "dependencies": {
+    "@cosmostation/cosmosjs": "^0.11.2",
     "chai": "^4.3.6",
     "dotenv": "^16.0.0"
   },
