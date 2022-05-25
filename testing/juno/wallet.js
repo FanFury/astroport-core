@@ -13,8 +13,8 @@ export class Wallet {
         this.publicKey = cosmos.getPubKeyAny(this.privateKey);
         this.wallet_address = cosmos.getAddress(memonic);
         this.feeValue = new message.cosmos.tx.v1beta1.Fee({
-            amount: [{denom: "ujuno", amount: String(500)}],
-            gas_limit: 200000
+            amount: [{denom: "ujuno", amount: String(20000 )}],
+            gas_limit: 990000
         });
     }
 
@@ -120,5 +120,5 @@ export class Wallet {
 
 const mnemonic = "example cruise forward hidden earth lizard tide guilt toy peace method slam turtle reflect close meat pond patrol rookie legend business brother acoustic thunder"
 let wallet = new Wallet(mnemonic)
-// wallet.upload("../../artifacts/astroport_token.wasm")
+wallet.upload("../../artifacts/astroport_token.wasm")
 // wallet.send_funds("juno1gcxq5hzxgwf23paxld5c9z0derc9ac4m5g63xa", {denom: "ujuno", amount: String(100)})
