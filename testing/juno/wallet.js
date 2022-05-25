@@ -41,11 +41,10 @@ export class Wallet {
             to_address: to_address,
             amount: [coins]
         });
-        const msgSendAny = new message.google.protobuf.Any({
+        this.sign_and_broadcast([{
             type_url: "/cosmos.bank.v1beta1.MsgSend",
             value: message.cosmos.bank.v1beta1.MsgSend.encode(msgSend).finish()
-        });
-        this.sign_and_broadcast([msgSendAny])
+        }])
     }
 
     execute_contract(msg, contractAddress) {
@@ -121,4 +120,5 @@ export class Wallet {
 
 const mnemonic = "example cruise forward hidden earth lizard tide guilt toy peace method slam turtle reflect close meat pond patrol rookie legend business brother acoustic thunder"
 let wallet = new Wallet(mnemonic)
-wallet.upload("../../artifacts/astroport_token.wasm")
+// wallet.upload("../../artifacts/astroport_token.wasm")
+// wallet.send_funds("juno1gcxq5hzxgwf23paxld5c9z0derc9ac4m5g63xa", {denom: "ujuno", amount: String(100)})
