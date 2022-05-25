@@ -1,4 +1,4 @@
-import {cosmos, mnemonic} from "./constants.js";
+import {cosmos} from "./constants.js";
 import message from "@cosmostation/cosmosjs/src/messages/proto.js";
 import fs from "fs";
 
@@ -13,7 +13,7 @@ export class Wallet {
         this.publicKey = cosmos.getPubKeyAny(this.privateKey);
         this.wallet_address = cosmos.getAddress(memonic);
         this.feeValue = new message.cosmos.tx.v1beta1.Fee({
-            amount: [{denom: "ujunox", amount: String(500)}],
+            amount: [{denom: "ujuno", amount: String(500)}],
             gas_limit: 200000
         });
     }
@@ -89,10 +89,36 @@ export class Wallet {
 
     upload(file) {
         const code = fs.readFileSync(file).toString("base64");
+        const msgStoreCode = new message.cosmwasm.wasm.v1.MsgStoreCode({
+            sender: this.wallet_address,
+            wasm_byte_code: code,
+        });
+        this.sign_and_broadcast([{
+            type_url: "/cosmwasm.wasm.v1.MsgStoreCode",
+            value: message.cosmwasm.wasm.v1.MsgStoreCode.encode(msgStoreCode).finish()
+        }])
+
+    }
+
+    init(code_id, contract_init) {
+        let transferBytes = new Buffer(JSON.stringify(contract_init));
+        const msgInit = new message.cosmwasm.wasm.v1.MsgInstantiateContract({
+            sender: this.wallet_address,
+            admin: this.wallet_address,
+            codeId: code_id,
+            initMsg: transferBytes,
+            initFunds: []
+        });
+        this.sign_and_broadcast([{
+            type_url: "/cosmwasm.wasm.v1.MsgInstantiateContract",
+            value: message.cosmwasm.wasm.v1.MsgInstantiateContract.encode(msgInit).finish()
+        }])
+
     }
 
 
 }
 
+const mnemonic = "example cruise forward hidden earth lizard tide guilt toy peace method slam turtle reflect close meat pond patrol rookie legend business brother acoustic thunder"
 let wallet = new Wallet(mnemonic)
-wallet.send_funds("juno1gcxq5hzxgwf23paxld5c9z0derc9ac4m5g63xa", {denom: "ujunox", amount: String(100)})
+wallet.upload("../../artifacts/astroport_token.wasm")
