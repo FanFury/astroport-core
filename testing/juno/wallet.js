@@ -13,13 +13,13 @@ export class Wallet {
         this.publicKey = cosmos.getPubKeyAny(this.privateKey);
         this.wallet_address = cosmos.getAddress(memonic);
         this.feeValue = new message.cosmos.tx.v1beta1.Fee({
-            amount: [{denom: "ujuno", amount: String(20000 )}],
-            gas_limit: 990000
+            amount: [{denom: "ujunox", amount: String(20000)}],
+            gas_limit: 100000000
         });
     }
 
     sign_and_broadcast(messages) {
-        cosmos.getAccounts(this.wallet_address).then(data => {
+        cosmos.getAccounts(this.wallet_address).then(async data => {
             let signerInfo = new message.cosmos.tx.v1beta1.SignerInfo({
                 public_key: this.publicKey,
                 mode_info: {single: {mode: message.cosmos.tx.signing.v1beta1.SignMode.SIGN_MODE_DIRECT}},
@@ -28,10 +28,8 @@ export class Wallet {
             const txBody = new message.cosmos.tx.v1beta1.TxBody({messages: messages, memo: ""});
             const authInfo = new message.cosmos.tx.v1beta1.AuthInfo({signer_infos: [signerInfo], fee: this.feeValue});
             const signedTxBytes = cosmos.sign(txBody, authInfo, data.account.account_number, this.privateKey);
-            cosmos.broadcast(signedTxBytes).then(response => {
-                console.log(response)
-                return response
-            });
+            let response = await cosmos.broadcast(signedTxBytes)
+            console.log(response)
         })
     }
 
@@ -118,7 +116,7 @@ export class Wallet {
 
 }
 
-const mnemonic = "example cruise forward hidden earth lizard tide guilt toy peace method slam turtle reflect close meat pond patrol rookie legend business brother acoustic thunder"
+const mnemonic = "clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose"
 let wallet = new Wallet(mnemonic)
 wallet.upload("../../artifacts/astroport_token.wasm")
 // wallet.send_funds("juno1gcxq5hzxgwf23paxld5c9z0derc9ac4m5g63xa", {denom: "ujuno", amount: String(100)})
