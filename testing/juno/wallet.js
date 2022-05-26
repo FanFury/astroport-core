@@ -28,7 +28,7 @@ export class Wallet {
             const txBody = new message.cosmos.tx.v1beta1.TxBody({messages: messages, memo: ""});
             const authInfo = new message.cosmos.tx.v1beta1.AuthInfo({signer_infos: [signerInfo], fee: this.feeValue});
             const signedTxBytes = cosmos.sign(txBody, authInfo, data.account.account_number, this.privateKey);
-            let response = await cosmos.broadcast(signedTxBytes)
+            let response = await cosmos.broadcast(signedTxBytes,"BROADCAST_MODE_BLOCK")
             console.log(response)
         })
     }
@@ -118,5 +118,5 @@ export class Wallet {
 
 const mnemonic = "clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose"
 let wallet = new Wallet(mnemonic)
-wallet.upload("../../artifacts/astroport_token.wasm")
-// wallet.send_funds("juno1gcxq5hzxgwf23paxld5c9z0derc9ac4m5g63xa", {denom: "ujuno", amount: String(100)})
+// wallet.upload("../../artifacts/astroport_token.wasm")
+wallet.send_funds("juno1gcxq5hzxgwf23paxld5c9z0derc9ac4m5g63xa", {denom: "ujunox", amount: String(100)})
